@@ -1,0 +1,216 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  geo-service:
+    build: ./geo-service
+    ports:
+      - "3008:3008"
+    environment:
+      - GOOGLE_MAPS_API_KEY=AIzaSyDIs09hw_rUlTcrNxxVq96qb4BqD63JLKk
+      - RABBITMQ_URL=amqp://rabbitmq
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - rabbitmq
+      - redis
+  mysql-auth:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: authdb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+      MYSQL_ROOT_PASSWORD: rootpass
+    networks:
+      - taxi-net
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-auth-data:/var/lib/mysql
+
+  mysql-ride:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ridedb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+      MYSQL_ROOT_PASSWORD: rootpass
+    networks:
+      - taxi-net
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-ride-data:/var/lib/mysql
+
+  mysql-payment:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: paymentdb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+      MYSQL_ROOT_PASSWORD: rootpass
+    networks:
+      - taxi-net
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql-payment-data:/var/lib/mysql
+
+  mysql-review:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: reviewdb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+      MYSQL_ROOT_PASSWORD: rootpass
+    networks:
+      - taxi-net
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql-review-data:/var/lib/mysql
+
+
+  auth-service-filebeat:
+    image: docker.elastic.co/beats/filebeat:7.15.0
+    container_name: auth-service-filebeat
+    volumes:
+      - ./auth-service/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./auth-service/logs:/app/logs:ro
+    depends_on:
+      - auth-service
+    networks:
+      - taxi-net
+
+  auth-service:
+    build: ./auth-service
+    volumes:
+      - ./auth-service:/usr/src/index
+      - /usr/src/app/node_modules
+    working_dir: /usr/src/app
+    environment:
+      - DATABASE_HOST=mysql-auth
+      - DATABASE_PORT=3306
+      - DATABASE_USER=user
+      - DATABASE_PASSWORD=pass
+      - RABBITMQ_URL=rabbitmq
+    depends_on:
+      - mysql-auth
+      - rabbitmq
+    networks:
+      - taxi-net
+
+  ride-service:
+    build: ./ride-service
+    volumes:
+      - ./ride-service:/usr/src/app
+      - /usr/src/app/node_modules
+    working_dir: /usr/src/app
+    depends_on:
+      - mysql-ride
+      - rabbitmq
+      - elasticsearch
+    networks:
+      - taxi-net
+
+  payment-service:
+    build: ./payment-service
+    volumes:
+      - ./payment-service:/usr/src/app
+      - /usr/src/app/node_modules
+    working_dir: /usr/src/app
+    depends_on:
+      - mysql-payment
+      - rabbitmq
+    networks:
+      - taxi-net
+
+  review-service:
+    build: ./review-service
+    volumes:
+      - ./review-service:/usr/src/app
+      - /usr/src/app/node_modules
+    working_dir: /usr/src/app
+    depends_on:
+      - mysql-review
+      - rabbitmq
+    networks:
+      - taxi-net
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - '8000:8000'
+    depends_on:
+      - auth-service
+      - ride-service
+      - payment-service
+      - review-service
+    networks:
+      - taxi-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - taxi-net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.15.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - taxi-net
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.15.0
+    container_name: logstash
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5044:5044"
+    networks:
+      - taxi-net
+
+volumes:
+  esdata:
+  mysql-auth-data:
+  mysql-ride-data:
+  mysql-payment-data:
+  mysql-review-data:
+
+networks:
+  taxi-net:
+    driver: bridge
