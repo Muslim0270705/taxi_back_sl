@@ -38,11 +38,15 @@ const Ride = sequelize.define('Ride', {
     paymentType: {
         type: DataTypes.ENUM('cash', 'card'),
         allowNull: false,
-        defaultValue: 'card',
+        defaultValue: 'cash',
     },
     status: {
         type: DataTypes.ENUM('pending', 'driver_assigned', 'in_progress', 'completed', 'cancelled'),
         defaultValue: 'pending',
+    },
+    cancellationReason: {
+        type: DataTypes.STRING,
+        allowNull: true,
     },
 }, {
     tableName: 'rides',

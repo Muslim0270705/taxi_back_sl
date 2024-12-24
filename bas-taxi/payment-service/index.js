@@ -7,6 +7,7 @@ import sequelize from './utils/database.js';
 import logger from './utils/logger.js';
 import { connectRabbitMQ } from './utils/rabbitmq.js';
 import { startConsuming } from './services/sagaOrchestrator.js';
+import {subscribeToPaymentCommands} from "./subscriber/payment.subscribe.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ sequelize.authenticate()
 connectRabbitMQ()
     .then(() => {
         startConsuming();
+        subscribeToPaymentCommands();
     })
     .catch(err => {
         logger.error('Ошибка при подключении к RabbitMQ', { error: err.message });

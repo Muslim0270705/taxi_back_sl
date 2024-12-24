@@ -17,3 +17,4 @@ export const updateSettingsInService = async (settings) => {
         throw error;
     }
 };
+

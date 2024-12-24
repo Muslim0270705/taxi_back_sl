@@ -5,7 +5,7 @@ import logger from '../utils/logger.js';
 const uuidv4 = crypto.randomUUID();
 
 export const publishGeoEvent = async (event, data) => {
-    const channel = getChannel();
+    const channel = await getChannel();
     const exchangeName = 'geo_events';
     await channel.assertExchange(exchangeName, 'fanout', { durable: true });
 

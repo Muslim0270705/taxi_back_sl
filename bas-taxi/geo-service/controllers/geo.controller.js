@@ -36,6 +36,23 @@ export const reverseGeocode = async (req, res) => {
     }
 };
 
+export const getCityByCoordinates = async (req, res) => {
+    try {
+        const { latitude, longitude } = req.body;
+
+        if (!latitude || !longitude) {
+            return res.status(400).json({ error: 'Параметр "address" обязателен' });
+        }
+
+        const location = await googleMapsService.getCityByCoordinates(latitude, longitude);
+
+        res.json(location);
+    } catch (error) {
+        logger.error('Ошибка в geocodeAddress', { error: error.message });
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+};
+
 export const getDistanceAndDuration = async (req, res) => {
     try {
         const { origin, destination } = req.body;

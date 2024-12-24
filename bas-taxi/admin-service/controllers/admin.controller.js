@@ -25,12 +25,36 @@ export const getUsers = async (req, res) => {
 };
 
 export const getDriverRequests = async (req, res) => {
+    // const city = req.user.city;
     try {
+        // const requests = await DriverRequest.findAll({ where: { status: 'pending', city } });
         const requests = await DriverRequest.findAll({ where: { status: 'pending' } });
         res.json(requests);
     } catch (error) {
         logger.error('Ошибка при получении заявок водителей', { error: error.message });
         res.status(500).json({ error: 'Ошибка при получении заявок водителей' });
+    }
+};
+
+
+export const getDriverDetails = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const response = await axios.get(`${API_GATEWAY_URL}/auth/driver/${id}`, {
+            headers: {
+                Authorization: req.headers.authorization,
+            },
+        });
+
+        res.status(200).json(response.data);
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+            logger.warn(`Driver с id=${id} не найден`);
+            return res.status(404).json({ error: 'Водитель не найден' });
+        }
+
+        logger.error('Ошибка при получении данных водителя', { error: error.message });
+        res.status(500).json({ error: 'Ошибка при получении данных водителя' });
     }
 };
 
@@ -52,7 +76,7 @@ export const approveDriver = async (req, res) => {
         const exchangeName = 'driver_approval';
         await channel.assertExchange(exchangeName, 'fanout', { durable: true });
         const approvalMessage = {
-            userId: driverRequest.userId,
+            driverId: driverRequest.driverId,
         };
         channel.publish(exchangeName, '', Buffer.from(JSON.stringify(approvalMessage)), {
             persistent: true,
@@ -87,7 +111,7 @@ export const rejectDriver = async (req, res) => {
         const exchangeName = 'driver_rejection';
         await channel.assertExchange(exchangeName, 'fanout', { durable: true });
         const rejectionMessage = {
-            userId: driverRequest.userId,
+            driverId: driverRequest.driverId,
         };
         channel.publish(exchangeName, '', Buffer.from(JSON.stringify(rejectionMessage)), {
             persistent: true,

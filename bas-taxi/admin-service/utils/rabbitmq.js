@@ -24,9 +24,9 @@ export const connectRabbitMQ = async () => {
                 logger.info('Получено сообщение о новом водителе', message);
                 try {
                     await DriverRequest.create({
-                        userId: message.userId,
+                        driverId: message.driverId,
                         phoneNumber: message.phoneNumber,
-                        documentPath: message.documentPath,
+                        city: message.city,
                         status: 'pending',
                     });
                     logger.info('Заявка водителя сохранена в базе данных', { userId: message.userId });

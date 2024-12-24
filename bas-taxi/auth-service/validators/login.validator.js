@@ -1,8 +1,15 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-    body: z.object({
-        phoneNumber: z.string().nonempty('Номер телефона обязателен'),
-        password: z.string().min(6, 'Пароль должен содержать минимум 6 символов'),
-    }),
+    phoneNumber: z.string(),
+});
+
+export const confirmLoginSchema = z.object({
+    phoneNumber: z.string(),
+    verificationCode: z.string().length(4, 'Код должен состоять из 4 символов'),
+});
+
+export const adminLoginSchema = z.object({
+    username: z.string(),
+    password: z.string(),
 });

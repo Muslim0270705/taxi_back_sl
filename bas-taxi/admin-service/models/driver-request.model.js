@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../../auth-service/utils/database.js';
+import sequelize from '../utils/database.js';
 
 const DriverRequest = sequelize.define('DriverRequest', {
     id: {
@@ -7,7 +7,7 @@ const DriverRequest = sequelize.define('DriverRequest', {
         autoIncrement: true,
         primaryKey: true,
     },
-    userId: {
+    driverId: {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
@@ -15,7 +15,7 @@ const DriverRequest = sequelize.define('DriverRequest', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    documentPath: {
+    city: {
         type: DataTypes.STRING,
         allowNull: false,
     },
@@ -25,7 +25,7 @@ const DriverRequest = sequelize.define('DriverRequest', {
     },
     reason: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
     }
 }, {
     tableName: 'driver_requests',

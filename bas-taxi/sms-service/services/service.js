@@ -14,12 +14,13 @@ export const connectRabbitMQ = async () => {
 
         const sendExchange = 'sms_send_exchange';
         const verificationExchange = 'sms_verification_exchange';
+
         await channel.assertExchange(sendExchange, 'fanout', { durable: true });
         await channel.assertExchange(verificationExchange, 'fanout', { durable: true });
 
     } catch (error) {
         logger.error('Ошибка подключения к RabbitMQ:', error);
-        setTimeout(() => connectRabbitMQ(), 5000); // Повторное подключение через 5 секунд
+        setTimeout(() => connectRabbitMQ(), 5000);
     }
 };
 
@@ -40,7 +41,6 @@ export const sendVerification = async ({ phoneNumber, verificationCode, name }) 
     }
 
     const verificationExchange = 'sms_verification_exchange';
-    const mes = `Здравствуйте, ${name}! Ваш код подтверждения: ${verificationCode}. Используйте его для завершения регистрации.`;
     const message = { phoneNumber, verificationCode, name, attempt: 1 };
     channel.publish(verificationExchange, '', Buffer.from(JSON.stringify(message)), { persistent: true });
     logger.info('Verification Code отправлено в очередь для отправки');

@@ -1,10 +1,9 @@
-// app.js
 import express from 'express';
 import dotenv from './utils/config.js';
 import logger from './utils/logger.js';
 import sequelize from './utils/database.js';
-import reviewCommandRoutes from './commands/routes/review.route';
-import reviewQueryRoutes from './queries/routes/review-query.route';
+import reviewCommandRoutes from './commands/routes/review.route.js';
+import reviewQueryRoutes from './queries/routes/review-query.route.js';
 import errorHandler from './middlewares/error.js';
 
 const app = express();

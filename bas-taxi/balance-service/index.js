@@ -35,7 +35,6 @@ sequelize.sync().then(() => {
     app.listen(PORT, async () => {
         logger.info(`Balance-Service запущен на порту ${PORT}`);
 
-        // Подписка на события
         await subscribeToAdminEvents();
         await subscribeToRideEvents();
     });

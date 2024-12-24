@@ -8,6 +8,4 @@ RUN yarn install
 
 COPY . .
 
-EXPOSE 3007
-
 CMD ["node", "index.js"]

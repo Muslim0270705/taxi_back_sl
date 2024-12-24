@@ -1,13 +1,12 @@
-FROM node:20-alpine
+# Dockerfile
+FROM node:20
 
 WORKDIR /usr/src/app
-
 COPY package*.json ./
-
-RUN yarn install
+RUN npm install
 
 COPY . .
 
-EXPOSE 3003
+EXPOSE 3088
 
-CMD ["node", "index.js"]
+CMD ["npm", "start"]

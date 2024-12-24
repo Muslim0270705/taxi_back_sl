@@ -1,36 +1,32 @@
+// src/middlewares/auth.middleware.js
 import jwt from 'jsonwebtoken';
-import logger from '../utils/logger.js';
+import dotenv from 'dotenv';
 
-const authMiddleware = (roles = []) => {
-    if (typeof roles === 'string') {
-        roles = [roles];
-    }
+dotenv.config();
 
+export const authMiddleware = (roles = []) => {
     return (req, res, next) => {
-        const authHeader = req.headers.authorization;
+        const authHeader = req?.headers?.authorization;
         if (!authHeader) {
-            return res.status(401).json({ message: 'Нет токена авторизации' });
+            return res.status(401).json({ message: 'Token is missing' });
         }
 
         const token = authHeader.split(' ')[1];
         if (!token) {
-            return res.status(401).json({ message: 'Нет токена авторизации' });
+            return res.status(401).json({ message: 'Token is missing' });
         }
 
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             req.user = decoded;
 
-            if (roles.length && !roles.includes(decoded.role)) {
-                return res.status(403).json({ message: 'Доступ запрещен' });
+            if (roles.length && !roles.includes(req.user.role)) {
+                return res.status(403).json({ message: 'Access denied' });
             }
 
             next();
         } catch (error) {
-            logger.error('Ошибка при проверке JWT', { error: error.message });
-            res.status(401).json({ message: 'Неверный токен' });
+            res.status(401).json({ message: 'Invalid token' });
         }
     };
 };
-
-export default authMiddleware;

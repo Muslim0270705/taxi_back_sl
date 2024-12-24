@@ -14,6 +14,10 @@ const Tariff = sequelize.define('Tariff', {
         type: DataTypes.FLOAT,
         allowNull: false,
     },
+    costPerMinute: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+    },
 }, {
     tableName: 'tariffs',
     timestamps: true,

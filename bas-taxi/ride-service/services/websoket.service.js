@@ -1,65 +1,125 @@
-// src/services/websocketService.js
+// services/websocket.service.js
 import { Server } from 'socket.io';
 import logger from '../utils/logger.js';
-import config from '../utils/config.js';
-import redis from 'redis';
+import { removeDriverLocation, updateDriverLocation } from './location.serrvice.js';
 
-const createWebSocketService = (server) => {
+let ioInstance = null;
+
+let isInitialized = false;
+
+let emitRideUpdate = () => { throw new Error('emitRideUpdate вызван до инициализации WebSocket-сервиса'); };
+let emitParkingStatus = () => { throw new Error('emitParkingStatus вызван до инициализации WebSocket-сервиса'); };
+let emitToDriver = () => { throw new Error('WebSocket не инициализирован'); };
+let emitToPassenger = () => { throw new Error('emitToPassenger вызван до инициализации WebSocket-сервиса'); };
+
+export const createWebSocketService = (server) => {
     const io = new Server(server, {
         cors: {
-            origin: "*", // Замените на URL вашего фронтенда
-            methods: ["GET", "POST"]
-        }
+            origin: "*",
+            methods: ["GET", "POST"],
+        },
+        transports: ["websocket", "polling"]
     });
 
-    const redisClient = redis.createClient({
-        socket: {
-            host: config.redis.host,
-            port: config.redis.port
-        }
-    });
+    ioInstance = io;
+    isInitialized = true;
 
-    redisClient.on('error', (err) => logger.error('Redis Client Error', err));
+    const ridesNamespace = io.of('/rides');
 
-    const connectRedis = async () => {
-        try {
-            await redisClient.connect();
-            logger.info('Redis подключен для WebSocket-сервиса');
-        } catch (error) {
-            logger.error('Ошибка подключения к Redis:', error.message);
-            setTimeout(connectRedis, 5000); // Повторное подключение через 5 секунд
-        }
-    };
+    ridesNamespace.on('connection', (socket) => {
+        logger.info(`WebSocket: новое подключение ${socket.id}`);
 
-    connectRedis();
+        socket.emit("test_response", { message: "Привет, клиент!" });
 
-    io.on('connection', (socket) => {
-        logger.info(`Новое подключение: ${socket.id}`);
+        socket.on('driver_location', async ({ driverId, latitude, longitude }) => {
+            try {
+                await updateDriverLocation(driverId, latitude, longitude);
+                logger.info(`WebSocket: Координаты водителя обновлены [Driver ID: ${driverId}]`);
+            } catch (error) {
+                logger.error('WebSocket: Ошибка при обновлении координат водителя', { error: error.message });
+            }
+        });
 
-        socket.on('join_ride', (rideId) => {
+        socket.on('join_driver', (driverId, callback) => {
+            logger.info(`Получено событие 'join_driver' от сокета ${socket.id} с driverId: ${driverId}`);
+            socket.join(`driver_${driverId}`);
+            socket.driverId = driverId; // Сохраняем driverId в сокете
+            logger.info(`WebSocket: Сокет ${socket.id} присоединился к driver_${driverId}`);
+            if (callback) callback('join_driver_success');
+        });
+
+        socket.on('join_user', (userId, callback) => {
+            socket.join(`user_${userId}`);
+            logger.info(`WebSocket: Сокет ${socket.id} присоединился к user_${userId}`);
+            if (callback) callback('join_user_success');
+        });
+
+        socket.on('join_ride', (rideId, callback) => {
             socket.join(`ride_${rideId}`);
-            logger.info(`Сокет ${socket.id} присоединился к комнате ride_${rideId}`);
+            logger.info(`WebSocket: Сокет ${socket.id} присоединился к ride_${rideId}`);
+            if (callback) callback('join_ride_success');
         });
 
-        socket.on('disconnect', () => {
-            logger.info(`Отключение сокета: ${socket.id}`);
+        socket.on('driver_parking', async ({ driverId, latitude, longitude }) => {
+            try {
+                emitParkingStatus(driverId, { latitude, longitude, isParking: true });
+                logger.info(`WebSocket: Водитель ${driverId} активировал режим парковки`);
+            } catch (error) {
+                logger.error('WebSocket: Ошибка при активации режима парковки', { error: error.message });
+            }
+        });
+
+        socket.on('driver_exit_parking', async (driverId) => {
+            try {
+                emitParkingStatus(driverId, { isParking: false });
+                logger.info(`WebSocket: Водитель ${driverId} вышел из режима парковки`);
+            } catch (error) {
+                logger.error('WebSocket: Ошибка при выходе из режима парковки', { error: error.message });
+            }
+        });
+
+        socket.on('disconnect', async () => {
+            const driverId = socket.driverId;
+            if (driverId) {
+                try {
+                    await removeDriverLocation(driverId);
+                    logger.info(`WebSocket: Местоположение водителя ${driverId} удалено`);
+                } catch (error) {
+                    logger.error('WebSocket: Ошибка при удалении координат водителя', { error: error.message, driverId });
+                }
+            }
+            logger.info(`WebSocket: Отключение сокета ${socket.id}`);
         });
     });
 
-    const emitRideUpdate = (rideId, update) => {
-        io.to(`ride_${rideId}`).emit('ride_update', update);
-        logger.info(`Обновление поездки ${rideId} отправлено в комнату ride_${rideId}`);
+    emitRideUpdate = (rideId, update) => {
+        ridesNamespace.to(`ride_${rideId}`).emit('ride_update', update);
+        logger.info(`WebSocket: Обновление отправлено в ride_${rideId}`, update);
     };
 
-    const emitParkingStatus = (driverId, parkingInfo) => {
-        io.emit('driver_parking_update', parkingInfo);
-        logger.info(`Обновление парковки водителя ${driverId} отправлено всем клиентам`);
+    emitParkingStatus = (driverId, parkingInfo) => {
+        ridesNamespace.emit('driver_parking_update', parkingInfo);
+        logger.info(`WebSocket: Статус парковки водителя обновлён [Driver ID: ${driverId}]`, parkingInfo);
     };
 
-    return {
-        emitRideUpdate,
-        emitParkingStatus
+    emitToDriver = (driverId, message) => {
+        ridesNamespace.to(`driver_${driverId}`).emit('notification', message);
+        logger.info(`WebSocket: Уведомление отправлено водителю [Driver ID: ${driverId}]`, message);
     };
+
+    emitToPassenger = (userId, message) => {
+        ridesNamespace.to(`user_${userId}`).emit('notification', message);
+        logger.info(`WebSocket: Уведомление отправлено пользователю [User ID: ${userId}]`, message);
+    };
+
+    logger.info('WebSocket-сервис инициализирован');
+
+    return { emitRideUpdate, emitParkingStatus, emitToDriver, emitToPassenger };
 };
 
-export default createWebSocketService;
+export const isWebSocketRunning = () => {
+    logger.info(`Проверка состояния WebSocket: ${isInitialized ? 'running' : 'not running'}`);
+    return isInitialized;
+};
+
+export { emitRideUpdate, emitParkingStatus, emitToDriver, emitToPassenger };

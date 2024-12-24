@@ -1,13 +1,17 @@
-FROM node:20-alpine
+# Используем Node.js LTS версию
+FROM node:14
 
+# Устанавливаем рабочую директорию
 WORKDIR /usr/src/app
-
+# Копируем package.json и устанавливаем зависимости
 COPY package*.json ./
+RUN npm install
 
-RUN yarn install
-
+# Копируем исходный код приложения
 COPY . .
 
-EXPOSE 3002
+# Открываем порт
+EXPOSE 3003
 
-CMD ["node", "index.js"]
+# Запускаем приложение
+CMD ["npm", "start"]

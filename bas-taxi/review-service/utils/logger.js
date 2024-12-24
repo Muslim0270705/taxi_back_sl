@@ -1,18 +1,21 @@
-import { createLogger, transports, format } from 'winston';
-import Elasticsearch from 'winston-elasticsearch';
+import { createLogger, format, transports } from 'winston';
+import { ElasticsearchTransport } from 'winston-elasticsearch';
 
 const esTransportOpts = {
     level: 'info',
     clientOpts: { node: process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200' },
-    indexPrefix: 'review-service-logs',
 };
 
+const esTransport = new ElasticsearchTransport(esTransportOpts);
+
 const logger = createLogger({
-    level: 'info',
-    format: format.combine(format.timestamp(), format.json()),
+    format: format.combine(
+        format.timestamp(),
+        format.json(),
+    ),
     transports: [
+        esTransport,
         new transports.Console(),
-        new Elasticsearch(esTransportOpts),
     ],
 });
 

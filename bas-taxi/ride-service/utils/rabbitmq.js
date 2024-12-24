@@ -12,7 +12,8 @@ export const connectRabbitMQ = async () => {
         channel = await connection.createChannel();
         logger.info('Успешно подключились к RabbitMQ');
     } catch (error) {
-        logger.error('Ошибка подключения к RabbitMQ:', error);
+        logger.error('Ошибка подключения к RabbitMQ:', error.message);
+        throw error;
     }
 };
 
@@ -21,4 +22,15 @@ export const getChannel = async () => {
         await connectRabbitMQ();
     }
     return channel;
+};
+
+export const assertExchange = async (exchangeName, type = 'fanout', options = { durable: true }) => {
+    try {
+        const channel = await getChannel();
+        await channel.assertExchange(exchangeName, type, options);
+        logger.info(`Exchange "${exchangeName}" успешно создан или проверен`);
+    } catch (error) {
+        logger.error(`Ошибка при проверке/создании Exchange "${exchangeName}"`, error.message);
+        throw error;
+    }
 };

@@ -4,7 +4,9 @@ import cors from 'cors';
 import adminRoutes from './routes/admin.route.js';
 import logger from './utils/logger.js';
 import { connectRabbitMQ } from './utils/rabbitmq.js';
+import morgan from "morgan";
 import sequelize from "./utils/database.js";
+import setupSwagger from './swaggger.js';
 
 dotenv.config();
 
@@ -13,6 +15,23 @@ const PORT = process.env.PORT || 3008;
 
 app.use(cors());
 app.use(express.json());
+
+const morganStream = {
+    write: (message) => {
+        console.log(message.trim());
+        logger.info(message.trim());
+    },
+};
+
+app.use(morgan('combined', { stream: morganStream }));
+
+app.use((req, res, next) => {
+    logger.info(`Admin Service: Получен запрос ${req.method} ${req.url} CorrelationID: ${req.headers['x-correlation-id'] || 'none'}`);
+    next();
+});
+
+app.use('/', adminRoutes);
+setupSwagger(app);
 
 sequelize.authenticate()
     .then(() => {
@@ -30,8 +49,6 @@ connectRabbitMQ()
     .catch(err => {
         logger.error('Ошибка при подключении к RabbitMQ', { error: err.message });
     });
-
-app.use('/', adminRoutes);
 
 
 app.use((err, req, res, next) => {

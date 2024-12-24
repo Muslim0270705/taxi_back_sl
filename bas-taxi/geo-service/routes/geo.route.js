@@ -5,12 +5,13 @@ import {
     getDistanceAndDuration,
     getDirections,
     findNearestDrivers,
-    updateDriverLocation,
+    updateDriverLocation, getCityByCoordinates,
 } from '../controllers/geo.controller.js';
 
 const router = express.Router();
 
 router.post('/geocode', geocodeAddress);
+router.post('/get-city', getCityByCoordinates)
 router.get('/reverse-geocode', reverseGeocode);
 router.post('/distance', getDistanceAndDuration);
 router.post('/directions', getDirections);

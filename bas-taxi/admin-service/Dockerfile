@@ -1,14 +1,18 @@
 # Use Node.js 20
-FROM node:20-alpine
+FROM node:20
 
+# Create app directory
 WORKDIR /usr/src/app
 
+# Install app dependencies
 COPY package*.json ./
+RUN npm install
 
-RUN yarn install
-
+# Copy app source code
 COPY . .
 
-EXPOSE 3000
+# Expose port
+EXPOSE 3008
 
-CMD ["node", "index.js"]
+# Start the app
+CMD ["npm", "start"]

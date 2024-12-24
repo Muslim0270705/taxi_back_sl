@@ -5,11 +5,11 @@ import logger from '../utils/logger.js';
 const uuidv4 = crypto.randomUUID();
 
 export const publishRideEvent = async (event, data, correlationId) => {
-    const channel = getChannel();
+    const channel = await getChannel();
     const exchangeName = 'ride_events';
     await channel.assertExchange(exchangeName, 'fanout', { durable: true });
 
-    const messageId = uuidv4();
+    const messageId = uuidv4;
     const message = {
         event,
         data,

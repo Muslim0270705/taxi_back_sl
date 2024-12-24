@@ -1,65 +1,41 @@
-import { DataTypes } from 'sequelize';
+import { Model, DataTypes } from 'sequelize';
 import sequelize from '../utils/database.js';
 
-const User = sequelize.define(
-    'User',
-    {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
-        },
-        email: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-            validate: { isEmail: true },
-        },
-        phoneNumber: {
-            type: DataTypes.STRING,
-            unique: true,
-            allowNull: false,
-        },
-        password: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        role: {
-            type: DataTypes.ENUM('passenger', 'driver', 'admin', 'moderator'),
-            allowNull: false,
-        },
-        isApproved: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-        isPhoneVerified: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-        verificationCode: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        lastSmsSentAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-        documentPath: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        iin: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        vehicleDetails: {
-            type: DataTypes.JSON,
-            allowNull: true,
-        },
+class User extends Model {}
+
+User.init({
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
     },
-    {
-        tableName: 'users',
-    }
-);
+    phoneNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    fullName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    role: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'passenger',
+    },
+    verificationCode: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    lastSmsSentAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+}, {
+    sequelize,
+    modelName: 'User',
+    tableName: 'users',
+    timestamps: true,
+});
 
 export default User;

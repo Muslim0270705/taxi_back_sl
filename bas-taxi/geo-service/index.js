@@ -14,14 +14,14 @@ const io = new Server(server);
 
 app.use(express.json());
 
-app.use('/geo', geoRoutes);
+app.use('/', geoRoutes);
 
 io.on('connection', (socket) => {
     logger.info(`Новый клиент подключился: ${socket.id}`);
     socketHandler(io, socket);
 });
 
-const PORT = process.env.PORT || 3008;
+const PORT = process.env.PORT || 3088;
 server.listen(PORT, async () => {
     logger.info(`Geo-Service запущен на порту ${PORT}`);
 

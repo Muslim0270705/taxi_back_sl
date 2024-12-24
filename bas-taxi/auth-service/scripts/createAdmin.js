@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import sequelize from '../utils/database.js';
 import User from '../models/user.model.js';
 import logger from '../utils/logger.js';
+import Admin from "../models/admin.model.js";
 
 dotenv.config();
 
@@ -13,20 +14,19 @@ const createAdmin = async () => {
 
         await sequelize.sync();
 
-        const existingAdmin = await User.findOne({ where: { phoneNumber: 'admin_phone_number' } });
+        const existingAdmin = await Admin.findOne({ where: { username: 'sadmin' } });
         if (existingAdmin) {
             logger.info('Админ уже существует');
             return;
         }
 
-        const hashedPassword = await bcrypt.hash('admin_password', 10);
+        const hashedPassword = await bcrypt.hash('b@$T@xxx1Password', 10);
 
-        const admin = await User.create({
-            phoneNumber: '9999999999999',
+        const admin = await Admin.create({
+            username: 'sadmin',
             password: hashedPassword,
-            role: 'admin',
-            isApproved: true,
-            isPhoneVerified: true,
+            role: 'superadmin',
+            isApproved: true
         });
 
         logger.info('Админ создан', { adminId: admin.id });
@@ -38,3 +38,4 @@ const createAdmin = async () => {
 };
 
 createAdmin();
+

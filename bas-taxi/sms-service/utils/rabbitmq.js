@@ -1,3 +1,4 @@
+// sms-service/src/utils/rabbitmq.js
 import amqp from 'amqplib';
 import dotenv from 'dotenv';
 import smscService from '../services/smsc.service.js';
@@ -49,6 +50,7 @@ class RabbitMQService {
             });
             await this.channel.bindQueue(this.retryQueue, this.retryExchange, 'sms_retry');
 
+            // Потребитель для обычных SMS
             this.channel.consume(this.sendQueue, async (msg) => {
                 if (msg !== null) {
                     const message = JSON.parse(msg.content.toString());
@@ -58,6 +60,7 @@ class RabbitMQService {
                 }
             }, { noAck: false });
 
+            // Потребитель для верификационных SMS
             this.channel.consume(this.verificationQueue, async (msg) => {
                 if (msg !== null) {
                     const message = JSON.parse(msg.content.toString());
@@ -67,6 +70,7 @@ class RabbitMQService {
                 }
             }, { noAck: false });
 
+            // Потребитель для повторных попыток
             this.channel.consume(this.retryQueue, async (msg) => {
                 if (msg !== null) {
                     const message = JSON.parse(msg.content.toString());
@@ -78,7 +82,7 @@ class RabbitMQService {
 
         } catch (error) {
             logger.error('Ошибка подключения к RabbitMQ:', error);
-            setTimeout(() => this.connect(), 5000); // Повторное подключение через 5 секунд
+            setTimeout(() => this.connect(), 5000);
         }
     }
 
@@ -87,7 +91,6 @@ class RabbitMQService {
         try {
             await smscService.sendSms({ phones, mes });
             logger.info(`SMS успешно отправлен на номера: ${phones}`);
-
             this.channel.publish(this.successExchange, '', Buffer.from(JSON.stringify({ phones, mes })), { persistent: true });
             logger.info('Успешное уведомление отправлено в success_exchange');
 
@@ -107,23 +110,17 @@ class RabbitMQService {
 
     async handleSendVerificationCode(message) {
         const { phoneNumber, verificationCode, name, attempt = 1 } = message;
-        const mes = `Здравствуйте, ${name}! Ваш код подтверждения: ${verificationCode}. Используйте его для завершения регистрации.`;
+        const mes = `Здравствуйте, ${name || ''}! Ваш код подтверждения: ${verificationCode}. Используйте его для завершения регистрации.`;
         try {
             await smscService.sendSms({ phones: phoneNumber, mes });
             logger.info(`Verification Code SMS успешно отправлен на номер: ${phoneNumber}`);
-
             this.channel.publish(this.successExchange, '', Buffer.from(JSON.stringify({ phones: phoneNumber, mes })), { persistent: true });
             logger.info('Успешное уведомление отправлено в success_exchange');
         } catch (error) {
             logger.error(`Ошибка при отправке Verification Code SMS на номер ${phoneNumber}:`, error.message);
 
             if (attempt < this.maxRetries) {
-                const retryMessage = {
-                    phoneNumber,
-                    verificationCode,
-                    name,
-                    attempt: attempt + 1
-                };
+                const retryMessage = { phoneNumber, verificationCode, name, attempt: attempt + 1 };
                 this.channel.publish(this.retryExchange, 'sms_retry', Buffer.from(JSON.stringify(retryMessage)), { persistent: true });
                 logger.info(`Verification Code SMS добавлен в очередь повторных попыток (Попытка ${attempt + 1})`);
             } else {

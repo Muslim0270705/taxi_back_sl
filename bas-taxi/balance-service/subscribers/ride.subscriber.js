@@ -18,7 +18,6 @@ export const subscribeToRideEvents = async () => {
                 const messageId = msg.properties.messageId;
                 const correlationId = msg.properties.headers['x-correlation-id'];
 
-                // Обертывание в механизм повторных попыток
                 try {
                     await retry(async () => {
                         if (message.event === 'ride_completed') {
@@ -45,7 +44,6 @@ export const subscribeToRideEvents = async () => {
                         error: error.message,
                         correlationId,
                     });
-                    // Дополнительные действия, например, отправка в DLQ
                 }
             }
         }, { noAck: true });
