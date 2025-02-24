@@ -24,7 +24,7 @@ const startServer = async () => {
         logger.info('RabbitMQ успешно подключен');
     } catch (error) {
         logger.error('Ошибка подключения к RabbitMQ. Завершаем процесс...', error.message);
-        process.exit(1); // Завершаем процесс, если RabbitMQ недоступен
+        process.exit(1);
     }
 
     const server = http.createServer(app);
@@ -38,8 +38,8 @@ const startServer = async () => {
     }
 
     app.get('/send-test-notification', (req, res) => {
-        const driverId = 1; // Пример ID водителя
-        const passengerId = 1; // Пример ID пассажира
+        const driverId = 1;
+        const passengerId = 1;
 
         emitToDriver(driverId, {
             event: 'tst',

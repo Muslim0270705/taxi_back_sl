@@ -1,4 +1,3 @@
-// src/services/ride.service.js
 import Ride from '../models/ride.model.js';
 import sequelize from '../utils/database.js';
 import { initiatePayment, cancelPayment } from './payment.service.js';

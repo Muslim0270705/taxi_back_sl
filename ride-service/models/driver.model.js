@@ -1,4 +1,3 @@
-// models/driverModel.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../utils/database.js';
 

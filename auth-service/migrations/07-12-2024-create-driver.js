@@ -10,7 +10,7 @@ module.exports = {
                 autoIncrement: true,
                 allowNull: false,
             },
-            userId: { // Связь с пользователем
+            userId: {
                 type: Sequelize.INTEGER,
                 allowNull: false,
                 references: {

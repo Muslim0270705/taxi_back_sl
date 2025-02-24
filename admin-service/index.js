@@ -36,7 +36,7 @@ setupSwagger(app);
 sequelize.authenticate()
     .then(() => {
         logger.info('Успешное подключение к базе данных');
-        return sequelize.sync(); // Синхронизация моделей
+        return sequelize.sync();
     })
     .then(() => {
         logger.info('Модели синхронизированы');

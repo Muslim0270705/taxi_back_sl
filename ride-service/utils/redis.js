@@ -1,7 +1,5 @@
-// src/utils/redisClient.js
 import { createClient } from 'redis';
 import logger from './logger.js';
-import config from './config.js';
 
 const redisClient = createClient({
     url: process.env.REDIS_URL
@@ -21,7 +19,7 @@ const connectRedis = async () => {
         logger.info('Redis успешно подключен');
     } catch (error) {
         logger.error('Ошибка подключения к Redis', { error: error.message });
-        setTimeout(connectRedis, 5000); // Повторная попытка подключения через 5 секунд
+        setTimeout(connectRedis, 5000);
     }
 };
 

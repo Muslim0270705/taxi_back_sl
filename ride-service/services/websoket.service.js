@@ -51,12 +51,11 @@ export const createWebSocketService = (server) => {
         socket.on('join_driver', (driverId, callback) => {
             logger.info(`Получено событие 'join_driver' от сокета ${socket.id} с driverId: ${driverId}`);
             socket.join(`driver_${driverId}`);
-            socket.driverId = driverId; // Сохраняем driverId в сокете
+            socket.driverId = driverId;
             logger.info(`WebSocket: Сокет ${socket.id} присоединился к driver_${driverId}`);
             if (callback) callback('join_driver_success');
         });
 
-// Обработчик события 'join_user'
         socket.on('join_user', (userId, callback) => {
             socket.join(`user_${userId}`);
             logger.info(`WebSocket: Сокет ${socket.id} присоединился к user_${userId}`);

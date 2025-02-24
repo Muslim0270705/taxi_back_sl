@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
                 if (!fs.existsSync(uploadDir)) {
                         fs.mkdirSync(uploadDir, { recursive: true });
                 }
-                cb(null, uploadDir); // Сохраняем в папку uploads
+                cb(null, uploadDir);
         },
         filename: (req, file, cb) => {
                 const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
@@ -213,7 +213,6 @@ router.post(
                                     logger.error('Ошибка загрузки файлов:', { error: err.message });
                                     return res.status(400).json({ error: err.message });
                             } else {
-                                    // Другие ошибки
                                     logger.error('Ошибка сервера при загрузке файлов:', { error: err.message });
                                     return res.status(500).json({ error: 'Ошибка сервера' });
                             }

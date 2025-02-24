@@ -1,4 +1,3 @@
-// utils/swagger.js
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import path from 'path';
@@ -8,7 +7,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Определение опций для swagger-jsdoc
 const options = {
     definition: {
         openapi: '3.0.0',

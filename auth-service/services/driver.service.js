@@ -4,7 +4,7 @@ import { generateVerificationCode } from '../utils/generate-code.js';
 import { sendVerificationCode } from "../utils/sms.service.js";
 import jwt from "jsonwebtoken";
 
-const SMS_SEND_INTERVAL_MS = 60 * 1000; // 1 минута
+const SMS_SEND_INTERVAL_MS = 60 * 1000;
 
 export const registerDriverService = async (driverData) => {
     logger.info('registerDriverService: Начало регистрации водителя');

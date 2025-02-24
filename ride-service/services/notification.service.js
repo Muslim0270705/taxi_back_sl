@@ -7,7 +7,6 @@ export const notifyNearbyDrivers = async (rideId, drivers, correlationId) => {
     const exchangeName = 'driver_notifications_exchange';
 
     try {
-        // Проверяем или создаем exchange
         await assertExchange(exchangeName, 'fanout');
 
         const channel = await getChannel();

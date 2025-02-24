@@ -5,7 +5,7 @@ import { sendVerificationCode } from "../utils/sms.service.js";
 import jwt from "jsonwebtoken";
 import ChangePhone from "../models/change-phone.model.js";
 
-const SMS_SEND_INTERVAL_MS = 60 * 1000; // 1 минута
+const SMS_SEND_INTERVAL_MS = 60 * 1000;
 
 export const registerPassengerService = async ({ phoneNumber }) => {
     logger.info('registerPassengerService: Начало регистрации пассажира');

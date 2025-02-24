@@ -7,7 +7,7 @@ module.exports = {
       type: Sequelize.STRING,
       allowNull: true,
     });
-    // Добавьте остальные колонки аналогично
+
     await queryInterface.addColumn('users', 'address', {
       type: Sequelize.STRING,
       allowNull: true,

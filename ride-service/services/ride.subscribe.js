@@ -1,4 +1,3 @@
-// services/rideSubscriber.js
 import { getChannel } from '../utils/rabbitmq.js';
 import logger from '../utils/logger.js';
 import ProcessedMessage from '../models/procces-message.model.js';
