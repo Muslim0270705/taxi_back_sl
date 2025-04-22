@@ -15,6 +15,7 @@ let channel;
     channel = await connection.createChannel();
     await channel.assertQueue('driver_verification');
 
+    // Обработка сообщений
     channel.consume('driver_verification', async (msg) => {
         const data = JSON.parse(msg.content.toString());
         const { userId } = data;

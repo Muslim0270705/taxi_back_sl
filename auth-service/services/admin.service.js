@@ -1,48 +1,99 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import Admin from '../models/admin.model.js';
-import logger from '../utils/logger.js';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import speakeasy from "speakeasy";
+import Admin from "../models/admin.model.js";
+import logger from "../utils/logger.js";
 
-export const loginAdminService = async ({ username, password }) => {
-    logger.info('loginAdminService: Начало входа администратора', { username });
+export const createAdminService = async ({ email, password, role, city }) => {
+  logger.info("Создание администратора", { email, role });
+  const existing = await Admin.findOne({ where: { email } });
+  if (existing) {
+    logger.warn("Email уже используется", { email });
+    throw new Error("Email уже используется");
+  }
 
-    const admin = await Admin.findOne({ where: { username } });
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const secret = speakeasy.generateSecret({ length: 20 });
 
-    if (!admin) {
-        logger.warn('loginAdminService: Администратор с таким ником не найден', { username });
-        throw new Error('Неверный ник или пароль');
-    }
+  const admin = await Admin.create({
+    email,
+    password: hashedPassword,
+    role,
+    city,
+    twoFactorSecret: secret.base32,
+    twoFactorEnabled: true,
+  });
 
-    const isPasswordValid = await bcrypt.compare(password, admin.password);
-    if (!isPasswordValid) {
-        logger.warn('loginAdminService: Неверный пароль', { username });
-        throw new Error('Неверный ник или пароль');
-    }
+  logger.info("Администратор успешно создан с включенной 2FA", { email, role });
 
-    const token = jwt.sign(
-        { adminId: admin.id, username: admin.username, role: admin.role, city: admin.city },
-        process.env.JWT_SECRET || 'your_jwt_secret',
-        { expiresIn: '1d' }
-    );
-
-    logger.info('loginAdminService: Успешный вход администратора', { username, role: admin.role });
-
-    return { token, role: admin.role, city: admin.city };
+  return {
+    id: admin.id,
+    email: admin.email,
+    password: password,
+    role: admin.role,
+    city: admin.city,
+    twoFactorSecret: secret.base32,
+    createdAt: admin.createdAt,
+  };
 };
 
-export const createAdminService = async ({ username, password, role, city }) => {
-    logger.info('createAdminService: Создание администратора', { username });
+export const loginAdminService = async ({
+  email,
+  password,
+  twoFactorToken,
+}) => {
+  logger.info("Вход администратора", { email });
+  const admin = await Admin.findOne({ where: { email } });
+  if (!admin) {
+    logger.warn("Неверный email или пароль", { email });
+    throw new Error("Неверный email или пароль");
+  }
 
-    const existingAdmin = await Admin.findOne({ where: { username } });
-    if (existingAdmin) {
-        logger.warn('createAdminService: Ник уже используется', { username });
-        throw new Error('Ник уже используется');
-    }
+  const validPassword = await bcrypt.compare(password, admin.password);
+  if (!validPassword) {
+    logger.warn("Неверный email или пароль", { email });
+    throw new Error("Неверный email или пароль");
+  }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+  const verified = speakeasy.totp.verify({
+    secret: admin.twoFactorSecret,
+    encoding: "base32",
+    token: twoFactorToken,
+    digits: 6,
+    window: 1,
+  });
 
-    const admin = await Admin.create({ username, password: hashedPassword, role, city });
-    logger.info('createAdminService: Администратор создан', { username, role });
+  if (!verified) {
+    logger.warn("Неверный двухфакторный код", { email });
+    throw new Error("Неверный двухфакторный код");
+  }
 
-    return admin;
+  const token = jwt.sign(
+    {
+      adminId: admin.id,
+      email: admin.email,
+      role: admin.role,
+      city: admin.city,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d" }
+  );
+
+  logger.info("Администратор успешно вошёл в систему", {
+    email,
+    role: admin.role,
+  });
+  return { token, role: admin.role, city: admin.city };
+};
+
+export const getAdminByIdService = async (id) => {
+  logger.info("Получение администратора по ID", { id });
+  const admin = await Admin.findByPk(id, {
+    attributes: ["id", "email", "role", "city", "createdAt"],
+  });
+  if (!admin) {
+    logger.warn("Администратор не найден", { id });
+    throw new Error("Администратор не найден");
+  }
+  return admin;
 };

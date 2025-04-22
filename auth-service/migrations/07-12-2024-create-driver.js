@@ -1,4 +1,3 @@
-// migrations/XXXXXX-create-drivers.js
 'use strict';
 
 module.exports = {

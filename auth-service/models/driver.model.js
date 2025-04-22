@@ -107,11 +107,35 @@ Driver.init({
         type: DataTypes.BOOLEAN,
         defaultValue: false,
     },
+    isDeleted: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    deletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
     verificationCode: {
         type: DataTypes.STRING,
         allowNull: true,
     },
     lastSmsSentAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    isBlocked: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+    },
+    blockReason: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    blockedBy: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    blockedAt: {
         type: DataTypes.DATE,
         allowNull: true,
     },

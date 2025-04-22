@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../utils/database.js';
+import sequelize from '../utils/sequelize.js';
 
 const Ride = sequelize.define('Ride', {
     id: {
@@ -54,6 +54,19 @@ const Ride = sequelize.define('Ride', {
     },
     cancellationReason: {
         type: DataTypes.STRING,
+        allowNull: true,
+    },
+    rejectedDrivers: {
+        type: DataTypes.JSON,
+        defaultValue: [],
+        allowNull: false,
+    },
+    searchStartTime: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+    },
+    driverArrivalTime: {
+        type: DataTypes.DATE,
         allowNull: true,
     },
 }, {
