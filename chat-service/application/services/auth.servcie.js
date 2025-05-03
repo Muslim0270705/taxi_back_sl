@@ -1,31 +1,43 @@
-import jwt from 'jsonwebtoken';
-import { ApplicationError } from '../exceptions/application.error.js';
+import jwt from "jsonwebtoken";
+import { ApplicationError } from "../exceptions/application.error.js";
 
 export class AuthService {
-    #secretKey;
+  #secretKey;
 
-    constructor(secretKey) {
-        this.#secretKey = process.env.JWT_SECRET;
+  constructor() {
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET не установлен в переменных окружения");
     }
+    this.#secretKey = process.env.JWT_SECRET;
+  }
 
-    async verifyToken(token) {
-        try {
-            const decoded = jwt.verify(token, this.#secretKey);
-            let userType, userId;
+  async verifyToken(token) {
+    try {
+      const decoded = jwt.verify(token, this.#secretKey);
+      let userType, userId;
 
-            if (decoded.adminId) {
-                userType = 'admin';
-                userId = decoded.adminId;
-            } else if (decoded.driverId) {
-                userType = 'driver';
-                userId = decoded.driverId;
-            } else if (decoded.userId) {
-                userType = 'passenger';
-                userId = decoded.userId;
-            }
-            return { userType, userId, role: decoded.role };
-        } catch (error) {
-            throw new ApplicationError('Недействительный токен', 'INVALID_TOKEN', 401);
-        }
+      if (decoded.adminId) {
+        userType = "admin";
+        userId = decoded.adminId;
+      } else if (decoded.driverId) {
+        userType = "driver";
+        userId = decoded.driverId;
+      } else if (decoded.userId) {
+        userType = "passenger";
+        userId = decoded.userId;
+      }
+
+      if (!userType || !userId) {
+        throw new Error("Не удалось определить тип пользователя или ID");
+      }
+
+      return { userType, userId, role: decoded.role };
+    } catch (error) {
+      throw new ApplicationError(
+        "Недействительный токен",
+        "INVALID_TOKEN",
+        401
+      );
     }
+  }
 }
